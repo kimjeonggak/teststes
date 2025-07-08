@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>🦖 공룡 환생 테스트</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+    #card {
+      border: 2px solid #333;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    h2 { margin-top: 0; }
+    .opt {
+      display: block;
+      margin: 12px 0;
+      padding: 12px;
+      border: 1px solid #888;
+      border-radius: 12px;
+      cursor: pointer;
+      background: #fff;
+      text-align: left;
+    }
+    .opt:hover { background: #f0f0f0; }
+    #progress {
+      height: 8px;
+      background: #eee;
+      border-radius: 4px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    #bar {
+      height: 100%;
+      background: #4caf50;
+      width: 0;
+    }
+    ul { padding-left: 20px; }
+  </style>
+</head>
+<body>
+
+  <h1>🦖 공룡 환생 테스트</h1>
+  <div id="progress"><div id="bar"></div></div>
+  <div id="card"></div>
+
+  <script>
+    // 1) 질문 16개 & 각 옵션에 매핑 값(E/I, S/N, T/F, J/P)
+    const QUESTIONS = [
+      {
+        q: "1. 눈을 떠보니 울창한 정글과 푸른 초원이 펼쳐진 백악기 한복판?! 주변에는 거대한 공룡들이 어슬렁거리고 있는데… 당신의 첫 반응은?",
+        opts: [
+          { txt: "이거 꿈이야!",        val: "E" },
+          { txt: "헐, 진짜 공룡이라니!", val: "E" },
+          { txt: "여기가 백악기라고?!",  val: "I" },
+          { txt: "타임슬립 성공?!",      val: "I" }
+        ]
+      },
+      {
+        q: "2. 가까운 바위 뒤에 다른 사람이! 어떻게 할까?",
+        opts: [
+          { txt: "먼저 다가가 인사",    val: "E" },
+          { txt: "질문하며 정보 수집",  val: "E" },
+          { txt: "멀찍이 관찰",        val: "I" },
+          { txt: "숨죽이고 지켜봄",    val: "I" }
+        ]
+      },
+      {
+        q: "3. 함께 행동하기로 한 두 사람, 어디부터 둘러볼지 상의한다. 당신의 의견은?",
+        opts: [
+          { txt: "일단 보이는 길부터 따라가 볼까요?", val: "E" },
+          { txt: "Go with the flow!",                val: "E" },
+          { txt: "잠깐, 전략을 세워봅시다.",           val: "I" },
+          { txt: "위험 지역은 피해서 가죠.",           val: "I" }
+        ]
+      },
+      {
+        q: "4. 헉! 거대한 공룡 한 마리가 당신과 눈이 마주치더니 ‘따라오라’는 듯 신호를 보낸다. 어떻게 할래?",
+        opts: [
+          { txt: "무서운데… 못 믿겠어!",    val: "I" },
+          { txt: "함정일지도 몰라.",         val: "I" },
+          { txt: "우릴 도우려는 걸까?",      val: "E" },
+          { txt: "새로운 친구가 될 수도 있어!", val: "E" }
+        ]
+      },
+      {
+        q: "5. 티라노사우루스가 초식공룡을 사냥하는 장면을 목격했다. 내 생각은?",
+        opts: [
+          { txt: "으엑… 잔인해.",               val: "S" },
+          { txt: "안타깝지만 자연의 섭리지.",    val: "S" },
+          { txt: "어떡해, 불쌍해…!",            val: "N" },
+          { txt: "도와줘야 하나? 가만 못 있겠어!", val: "N" }
+        ]
+      },
+      {
+        q: "6. 공룡 가족의 보금자리에 도착! 속마음은?",
+        opts: [
+          { txt: "우와, 공룡도 가족이 있네!",    val: "S" },
+          { txt: "아기 공룡 너무 귀여워!",        val: "S" },
+          { txt: "공룡도 연애를 하나…?",         val: "N" },
+          { txt: "말도 통하면 좋을 텐데.",        val: "N" }
+        ]
+      },
+      {
+        q: "7. 공룡 둥지에서 하룻밤 신세. 잠들기 전 생각은?",
+        opts: [
+          { txt: "내일은 또 어떻게 살아남지?", val: "S" },
+          { txt: "갑자기 왜 여기 온 거지…",     val: "N" },
+          { txt: "내일은 이렇게 해보자.",      val: "S" },
+          { txt: "작전 회의를 해야겠어.",       val: "N" }
+        ]
+      },
+      {
+        q: "8. 육식공룡이 습격! 가장 먼저 할 행동은?",
+        opts: [
+          { txt: "일단 튀자!",         val: "S" },
+          { txt: "살고 봐야지!",       val: "S" },
+          { txt: "모두 함께 도망쳐요!", val: "N" },
+          { txt: "우리 힘을 합쳐야 돼!", val: "N" }
+        ]
+      },
+      {
+        q: "9. 멀리서 사람 무리가 다가온다. 반응은?",
+        opts: [
+          { txt: "즉시 합류하고 인사",    val: "T" },
+          { txt: "구조대 아닐까 확인",   val: "T" },
+          { txt: "좀 부담스러운데…",     val: "F" },
+          { txt: "우리끼리 있는 게 좋아", val: "F" }
+        ]
+      },
+      {
+        q: "10. 시간 여행자 무리와 집으로 돌아갈 방법 토론, 어떤 의견?",
+        opts: [
+          { txt: "먹을 것·안전 확보부터",       val: "T" },
+          { txt: "처음 떨어진 장소로 돌아가자", val: "T" },
+          { txt: "미지의 포털을 찾아보자",      val: "F" },
+          { txt: "우리 힘으로 방법 만들자",     val: "F" }
+        ]
+      },
+      {
+        q: "11. 여정 중 네 역할은?",
+        opts: [
+          { txt: "팀 리더",      val: "T" },
+          { txt: "분위기 메이커", val: "F" },
+          { txt: "듣고 따르는 편", val: "F" },
+          { txt: "소규모 선호",   val: "T" }
+        ]
+      },
+      {
+        q: "12. 빛기둥 같은 수상한 장소 발견! 나는?",
+        opts: [
+          { txt: "계획대로 가자",        val: "T" },
+          { txt: "정해둔 코스 우선",    val: "T" },
+          { txt: "예정 변경! 모험 가자", val: "F" },
+          { txt: "호기심 폭발! 달려간다", val: "F" }
+        ]
+      },
+      {
+        q: "13. 포털 전 작별 인사, 어떻게 할래?",
+        opts: [
+          { txt: "작별 파티 열자!",  val: "P" },
+          { txt: "한마디씩 인사",    val: "J" },
+          { txt: "조용히 감사 인사", val: "J" },
+          { txt: "손 흔들기만",      val: "P" }
+        ]
+      },
+      {
+        q: "14. 포털 앞! 첫 행동은?",
+        opts: [
+          { txt: "돌멩이 던져 확인",   val: "J" },
+          { txt: "정보 더 모은 뒤",    val: "J" },
+          { txt: "느낌 따라 돌진!",    val: "P" },
+          { txt: "별 고민 없이 뛰어든다", val: "P" }
+        ]
+      },
+      {
+        q: "15. 한 명씩만 이동 가능! 먼저 누구 보낼까?",
+        opts: [
+          { txt: "너 먼저 들어가",    val: "P" },
+          { txt: "절박한 사람 먼저",  val: "P" },
+          { txt: "내가 먼저 갈게",    val: "J" },
+          { txt: "내가 제일 안전해",  val: "J" }
+        ]
+      },
+      {
+        q: "16. 무사히 현대 귀환! 가장 먼저 하는 일은?",
+        opts: [
+          { txt: "침대에 쓰러져 휴식",   val: "P" },
+          { txt: "맛있는 음식 시켜 먹기", val: "P" },
+          { txt: "밀린 업무 처리",       val: "J" },
+          { txt: "모험 기록 정리",       val: "J" }
+        ]
+      }
+    ];
+
+    // 2) 공룡 결과 매핑
+    const DINO = {
+      ISTJ:{name:"안킬로사우루스",desc:"책임감 있고 안정적인 방어형"},
+      ESTJ:{name:"티라노사우루스",desc:"권위 있고 체계적인 지도자형"},
+      ISFJ:{name:"트리케라톱스",desc:"헌신적이고 온순한 수호자형"},
+      ESFJ:{name:"마이아사우라",desc:"다정하고 이타적인 돌봄형"},
+      ISTP:{name:"알로사우루스",desc:"냉철·독립 사냥꾼형"},
+      ESTP:{name:"카르노타우루스",desc:"저돌적·즉흥 돌격형"},
+      ISFP:{name:"스티라코사우루스",desc:"온화·예술 자유영혼형"},
+      ESFP:{name:"파키케팔로사우루스",desc:"열정·자유 연예인형"},
+      INTJ:{name:"벨로키랍토르",desc:"영리·계획 전략가형"},
+      INTP:{name:"트로오돈",desc:"호기심·분석 탐구자형"},
+      INFJ:{name:"스테고사우루스",desc:"조용·헌신 이상주의자형"},
+      INFP:{name:"브라키오사우루스",desc:"온화·상상 몽상가형"},
+      ENTJ:{name:"스피노사우루스",desc:"야심·주도 지배자형"},
+      ENTP:{name:"딜로포사우루스",desc:"논쟁·장난 장난꾸러기형"},
+      ENFJ:{name:"파라사우롤로푸스",desc:"친화·리더 소통가형"},
+      ENFP:{name:"이구아노돈",desc:"모험·낙천 탐험가형"}
+    };
+
+    // 3) 호환성 매핑 (각 공룡과 잘 맞는 다른 3종)
+    const COMPAT = {
+      ISTJ:["ISFJ","ESTJ","INTJ"],
+      ESTJ:["ESFJ","ENTJ","ISTJ"],
+      ISFJ:["ISTJ","INFJ","ESFJ"],
+      ESFJ:["ESTJ","ENFJ","ISFJ"],
+      ISTP:["ISFP","ESTP","INTP"],
+      ESTP:["ESFP","ENTP","ISTP"],
+      ISFP:["INFP","ISTP","ESFP"],
+      ESFP:["ENFP","ESTP","ISFP"],
+      INTJ:["INFJ","ENTJ","ISTJ"],
+      INTP:["INFP","ISTP","ENTP"],
+      INFJ:["INTJ","ENFJ","ISFJ"],
+      INFP:["INTP","ISFP","ENFP"],
+      ENTJ:["ESTJ","INTJ","ENFJ"],
+      ENTP:["ESTP","INTP","ENFP"],
+      ENFJ:["ESFJ","INFJ","ENTJ"],
+      ENFP:["ESFP","INFP","ENTP"]
+    };
+
+    // 4) 상태 초기화
+    let idx = 0;
+    const scores = {E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0};
+    const card = document.getElementById("card");
+    const bar = document.getElementById("bar");
+
+    // 5) 질문 렌더링
+    function renderQuestion() {
+      const {q, opts} = QUESTIONS[idx];
+      bar.style.width = (idx / QUESTIONS.length * 100) + "%";
+      card.innerHTML = `<h2>${q}</h2>` +
+        opts.map(o =>
+          `<button class="opt" onclick="choose('${o.val}')">${o.txt}</button>`
+        ).join("");
+    }
+
+    // 6) 답 선택 시
+    function choose(val) {
+      scores[val]++;
+      idx++;
+      if (idx < QUESTIONS.length) {
+        renderQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    // 7) 결과 표시
+    function showResult() {
+      bar.style.width = "100%";
+      const type =
+        (scores.E>=scores.I?"E":"I") +
+        (scores.S>=scores.N?"S":"N") +
+        (scores.T>=scores.F?"T":"F") +
+        (scores.J>=scores.P?"J":"P");
+      const me = DINO[type];
+      // 호환 공룡 목록
+      const friends = COMPAT[type]
+        .map(code => `<li>${DINO[code].name}</li>`)
+        .join("");
+      card.innerHTML = `
+        <h2>당신은 🦖 <strong>${me.name}</strong>!</h2>
+        <p>${me.desc}</p>
+        <h3>잘 어울리는 공룡 친구들</h3>
+        <ul>${friends}</ul>
+        <button class="opt" onclick="location.reload()">다시하기</button>
+      `;
+    }
+
+    // 8) 테스트 시작
+    renderQuestion();
+  </script>
+</body>
+</html>
